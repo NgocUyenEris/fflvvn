@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="/static/logo.png">
+<title>FFVN — Free Fire Auto Farm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1a0707;--line:rgba(214,170,80,.3);--gold:#f3cd6b;--gold2:#d9a93f;--text:#f4e6c8;--mute:#a98a6a;--red:#ff7a7a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text);display:grid;place-items:center;padding:20px;
+  padding-top:max(20px,env(safe-area-inset-top,0px));padding-bottom:max(20px,env(safe-area-inset-bottom,0px));
+  background:radial-gradient(900px 500px at 50% 0,rgba(130,25,25,.55),transparent 70%),
+  radial-gradient(circle,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/4px 4px,var(--bg)}
+.card{width:100%;max-width:440px;border:1px solid var(--line);border-radius:26px;padding:34px 30px 26px;text-align:center;
+  background:linear-gradient(180deg,#4a1210,#2b0a0a 60%,#240808);box-shadow:0 0 0 1px rgba(0,0,0,.4),0 0 60px rgba(214,170,80,.14)}
+.logo{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 6px;filter:drop-shadow(0 6px 18px rgba(40,140,255,.4))}
+h1{font-size:46px;font-weight:800;letter-spacing:1px;color:#b89642;line-height:1.1;margin-top:8px;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+.tag{display:inline-block;margin-top:8px;background:linear-gradient(180deg,#f7dd8a,#d9a93f);color:#3a2605;font-size:12px;font-weight:800;letter-spacing:4px;padding:6px 22px;border-radius:99px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+.sub{margin:16px 0 26px;font-size:14px;color:#c9a96a}
+form{text-align:left}
+label{display:block;font-size:14px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:8px}
+.f{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;background:#140505;padding:0 14px;height:56px;margin-bottom:20px}
+.f:focus-within{border-color:var(--gold)}
+.f svg{width:20px;height:20px;stroke:#a98a6a;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.f input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;font:inherit;font-size:16px}
+.f input::placeholder{color:#7a6552}
+.eye{display:grid;place-items:center;background:none;border:none;cursor:pointer;padding:4px}
+.eye svg{stroke:#c9a96a}
+.btn{width:100%;height:56px;margin-top:6px;border:none;border-radius:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(180deg,#fbe9a8,#e2b84f);color:#2f1f06;font:inherit;font-size:19px;font-weight:700;box-shadow:0 6px 24px rgba(226,184,79,.3)}
+.btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn:focus-visible,.eye:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.msg{min-height:20px;margin:-6px 0 12px;font-size:13px;color:var(--red);font-weight:600}
+.foot{margin-top:24px;font-size:12.5px;color:#7d6550;text-align:center}
+@media(max-width:420px){h1{font-size:38px}.card{padding:28px 20px 22px}}
+</style>
+</head>
+<body>
+<main class="card">
+  <img class="logo" src="/static/logo.png" alt="FFVN">
+  <h1>FFVN</h1>
+  <span class="tag">FF LEVEL UP</span>
+  <p class="sub">Free Fire Auto-Farm Dashboard · Đăng nhập để tiếp tục</p>
+
+  <form id="f" autocomplete="on">
+    <label for="u">TÀI KHOẢN</label>
+    <div class="f">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+      <input id="u" name="username" placeholder="Nhập tên đăng nhập" autocomplete="username" autocapitalize="none" required>
+    </div>
+    <label for="p">MẬT KHẨU</label>
+    <div class="f">
+      <svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <input id="p" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+      <button type="button" class="eye" id="eye" aria-label="Hiện mật khẩu">
+        <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="msg" id="msg" role="alert"></div>
+    <button class="btn" id="go" type="submit">
+      <svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Đăng nhập
+    </button>
+  </form>
+  <p class="foot">Hệ thống bảo mật · Chỉ thành viên FFVN được phép truy cập</p>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+$('#eye').onclick=()=>{const p=$('#p');p.type=p.type==='password'?'text':'password'};
+$('#f').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('#go'),m=$('#msg'); m.textContent=''; b.disabled=true;
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:$('#u').value,password:$('#p').value})});
+    const j=await r.json();
+    if(j.status==='ok') location.href = j.role==='admin' ? '/admin' : '/';
+    else m.textContent=j.error||'Đăng nhập thất bại';
+  }catch(_){m.textContent='Không kết nối được máy chủ'}
+  b.disabled=false;
+});
+</script>
+</body>
+</html>
