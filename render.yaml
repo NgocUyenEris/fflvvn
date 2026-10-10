@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ffvn-farm
+    runtime: python
+    plan: starter              # gói free sẽ ngủ sau 15 phút -> bot ngừng cày, và mất dữ liệu
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    healthCheckPath: /login
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATA_DIR
+        value: /var/data
+      - key: FFVN_ADMIN_USER
+        value: admin
+      - key: FFVN_ADMIN_PASS
+        sync: false            # nhập mật khẩu admin trên dashboard Render
+    disk:
+      name: ffvn-data
+      mountPath: /var/data
+      sizeGB: 1
+      
