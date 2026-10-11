@@ -21,7 +21,39 @@ import time
 from typing import Dict, List, Any, Optional
 from aiohttp import web
 
-# ==================== BOT STATE (giữ nguyên để Main.py dùng) ====================
+# ==================== EXP TABLE & LEVEL HELPER ====================
+
+EXP_TABLE: Dict[int, int] = {
+    1: 0, 2: 48, 3: 202, 4: 544, 5: 1012, 6: 1844, 7: 2792, 8: 3800,
+    9: 4870, 10: 6004, 11: 7192, 12: 8448, 13: 9760, 14: 11140, 15: 12566,
+    16: 14060, 17: 15610, 18: 17224, 19: 18902, 20: 20632, 21: 22424, 22: 24278,
+    23: 26192, 24: 28166, 25: 30200, 26: 32294, 27: 34448, 28: 37804, 29: 41274,
+    30: 44870, 31: 48582, 32: 53394, 33: 58566, 34: 64096, 35: 69994, 36: 76460,
+    37: 83506, 38: 91128, 39: 99322, 40: 108092, 41: 120144, 42: 133266, 43: 147472,
+    44: 162760, 45: 179126, 46: 196572, 47: 215368, 48: 235516, 49: 257010, 50: 279860,
+    51: 304056, 52: 348318, 53: 394982, 54: 444044, 55: 495508, 56: 549364, 57: 633756,
+    58: 721744, 59: 813336, 60: 908522, 61: 1041438, 62: 1180352, 63: 1325266,
+    64: 1476184, 65: 1634300, 66: 1840946, 67: 2056594, 68: 2281242, 69: 2514880,
+    70: 2757530, 71: 3059506, 72: 3372284, 73: 3699456, 74: 4041030, 75: 4397002,
+    76: 4829104, 77: 5282204, 78: 5756304, 79: 6251408, 80: 6776502, 81: 7381324,
+    82: 8043154, 83: 8752982, 84: 9510808, 85: 10316338, 86: 11277190, 87: 12291748,
+    88: 13360304, 89: 14482858, 90: 15659418, 91: 17026708, 92: 18453950, 93: 19941280,
+    94: 21488570, 95: 23095858, 96: 24763138, 97: 26490428, 98: 28378704, 99: 30124996,
+    100: 32032884
+}
+
+def get_level_from_exp(exp: int) -> int:
+    """Tự động tra cứu level chuẩn từ lượng EXP dựa trên EXP_TABLE"""
+    current_lv = 1
+    for lv, required_exp in sorted(EXP_TABLE.items(), key=lambda x: x[0]):
+        if exp >= required_exp:
+            current_lv = lv
+        else:
+            break
+    return current_lv
+
+
+# ==================== BOT STATE ====================
 
 class BotState:
     def __init__(self):
@@ -48,16 +80,15 @@ class BotState:
 
     def register_account(self, uid: str, nickname: str, region: str, level: int, exp: int, likes: int = 0):
         uid_str = str(uid)
-
-        # Kiểm tra nếu đã đạt level 21 thì gán trạng thái hoàn thành luôn
-        initial_status = "COMPLETED_LV21" if (level and level >= 21) else "ONLINE"
+        real_level = level if (level and level > 1) else (get_level_from_exp(exp) if exp > 0 else 1)
+        initial_status = "COMPLETED_LV21" if (real_level >= 21 or exp >= 22424) else "ONLINE"
 
         if uid_str not in self.accounts:
             self.accounts[uid_str] = {
                 "uid": uid_str,
                 "nickname": nickname or f"Player_{uid_str[:6]}",
                 "region": region or "BD",
-                "level": level or 1,
+                "level": real_level,
                 "initial_exp": exp,
                 "current_exp": exp,
                 "gained_exp": 0,
@@ -74,10 +105,9 @@ class BotState:
                 acc["nickname"] = nickname
             if region:
                 acc["region"] = region
-            if level:
-                acc["level"] = level
-                if level >= 21:
-                    acc["status"] = "COMPLETED_LV21"
+            acc["level"] = real_level
+            if real_level >= 21 or exp >= 22424:
+                acc["status"] = "COMPLETED_LV21"
             acc["current_exp"] = exp
             acc["gained_exp"] = max(0, exp - acc["initial_exp"])
             acc["likes"] = likes
@@ -90,29 +120,34 @@ class BotState:
             acc = self.accounts[uid_str]
             old_exp = acc["current_exp"]
             acc["current_exp"] = current_exp
-            if level is not None and level > 0:
-                acc["level"] = level
-                if level >= 21:
-                    acc["status"] = "COMPLETED_LV21"
+            calc_level = level if (level is not None and level > 0) else acc.get("level", 1)
+            
+            if current_exp >= 22424 and calc_level < 21:
+                calc_level = 21
+
+            acc["level"] = calc_level
+            if calc_level >= 21 or current_exp >= 22424:
+                acc["status"] = "COMPLETED_LV21"
+
             acc["gained_exp"] = max(0, current_exp - acc["initial_exp"])
             acc["last_updated"] = time.strftime("%H:%M:%S")
             diff = current_exp - old_exp
             if diff > 0:
-                self.log(f"Account {acc['nickname']} ({uid_str}) gained +{diff} EXP! Total Gained: +{acc['gained_exp']}", "success", uid_str)
+                self.log(f"Account {acc['nickname']} ({uid_str}) gained +{diff} EXP! Total Gained: +{acc['gained_exp']} (Lv.{calc_level})", "success", uid_str)
             self.recalc_totals()
 
     def update_status(self, uid: str, status: str, active_matches: Optional[int] = None):
         uid_str = str(uid)
         if uid_str in self.accounts:
-            # Nếu tài khoản đã hoàn thành level 21, ưu tiên giữ nguyên trạng thái hoàn thành
-            if self.accounts[uid_str].get("level", 1) >= 21:
-                self.accounts[uid_str]["status"] = "COMPLETED_LV21"
+            acc = self.accounts[uid_str]
+            if acc.get("level", 1) >= 21 or acc.get("current_exp", 0) >= 22424:
+                acc["status"] = "COMPLETED_LV21"
             else:
-                self.accounts[uid_str]["status"] = status
+                acc["status"] = status
 
             if active_matches is not None:
-                self.accounts[uid_str]["active_matches"] = active_matches
-            self.accounts[uid_str]["last_updated"] = time.strftime("%H:%M:%S")
+                acc["active_matches"] = active_matches
+            acc["last_updated"] = time.strftime("%H:%M:%S")
 
     def increment_match(self, uid: str):
         uid_str = str(uid)
@@ -366,7 +401,7 @@ async def handle_login(request: web.Request) -> web.Response:
         u = find_user(username)
 
         if not u:
-            hash_password(password)  # giữ thời gian xử lý tương đương
+            hash_password(password)
             ok = False
         else:
             ok = verify_password(u, password)
@@ -415,7 +450,7 @@ async def handle_me(request: web.Request) -> web.Response:
     })
 
 
-# ==================== DASHBOARD API (lọc theo chủ sở hữu) ====================
+# ==================== DASHBOARD API ====================
 
 async def handle_get_stats(request: web.Request) -> web.Response:
     user = request["user"]
@@ -494,18 +529,27 @@ async def handle_add_account(request: web.Request) -> web.Response:
 
         merged = list(existing)
         for ne in new_entries:
-            if "uid" in ne:
-                match = [a for a in merged if str(a.get("uid")) == ne["uid"]]
-            else:
-                match = [a for a in merged if a.get("token") == ne["token"]]
+            uid_val = str(ne.get("uid", ""))
+            token_val = ne.get("token", "")
+            
+            match = None
+            for a in merged:
+                if uid_val and str(a.get("uid")) == uid_val:
+                    match = a
+                    break
+                elif token_val and a.get("token") == token_val:
+                    match = a
+                    break
+
             if match:
-                prev_owner = match[0].get("owner", "")
-                if prev_owner != username and not is_admin:
-                    return err(f"UID {ne.get('uid', '')} đã tồn tại trong hệ thống")
-                ne["owner"] = prev_owner or username
-                merged = [a for a in merged if a is not match[0]]
+                prev_owner = match.get("owner", "")
+                if prev_owner and prev_owner != username and not is_admin:
+                    return err(f"UID {uid_val} đã thuộc sở hữu của người dùng khác")
+                ne["owner"] = prev_owner if prev_owner else username
+                merged = [a for a in merged if a is not match]
             else:
                 ne["owner"] = username
+                
             merged.append(ne)
 
         if not is_admin:
@@ -746,7 +790,7 @@ def suspend_user_accounts(username: str) -> None:
         if task:
             task.cancel()
         acc = bot_state.accounts.get(uid)
-        if acc and acc.get("level", 1) < 21:
+        if acc and acc.get("level", 1) < 21 and acc.get("current_exp", 0) < 22424:
             acc["status"] = "OFFLINE"
             acc["active_matches"] = 0
     bot_state.log(f"User '{username}' hết hạn/bị cấm: acc tạm nghỉ cày.", "warning")
